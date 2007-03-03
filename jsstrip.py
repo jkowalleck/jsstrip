@@ -80,19 +80,48 @@ def debugOn(s):
 def debugOff(s):
     pass
 
+def iswhite(ch):
+    return ch == ' ' or ch == '\n' or ch == '\r' or ch == '\t'
+
+
 def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, debug=debugOff):
     result = []  # result array.  gets joined at end.
     i = 0        # char index for input string
+    j = 0        # char forward index for input string
+    slen = len(s) # size of input string
     line = 0     # line number of file (close to it anyways)
     
     #
     # items that don't need spaces next to them
     #
-    chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r'
+    chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r\'"[]'
+    tokens = ("do", "var", "function", "new", "case")
+    while (i < slen):
+        # skip all "boring" characters.  This is either
+        # reserved word (e.g. "for", "else", "if") or a
+	# variable/object/method (e.g. "foo.color")
+	j = i
+	while (j < slen and chars.find(s[j]) == -1):
+            j = j + 1
+        if i != j:
+            token = s[i:j]
+            if j != slen and iswhite(s[j+1]) and (token in tokens):
+               # could check to see if last token was ";" since I think it 
+               # has to be
+               result.append(token + " ")
+            elif len(result) > 0 and result[len(result)-1] == "else":
+               # else is wierd since it can have two forms
+               # "} else" and " else"
+               result.append(" " + token)
+            elif iswhite(s[j+1]) and token == "in":
+               # "in" is another weird one since it must have
+               # whitespace on both sides
+               result.append(" " + token + " ")
+            else:
+               result.append(token)
+            i = j
 
-    while (i < len(s)):
-	ch = s[i]
-	
+        ch = s[i]
 	# multiline comments
 	if ch == '/' and s[i+1] == '*':
 	    endC = s.find('*/',i+2)
@@ -144,10 +173,10 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 		if s[i+j] == '\\': j=j+2
 	    result.append(s[i:i+j+1])
 	    debug("DQUOTE: " + s[i:i+j+1])
-	    i = i +j + 1
+	    i = i + j + 1
 	    continue
 
-	#double quote strings
+	# single quote strings
 	if ch == "'":
 	    j = 1
 	    while (s[i+j] != "'"):
@@ -155,7 +184,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 		if s[i+j] == '\\': j=j+2
 	    result.append(s[i:i+j+1])
 	    debug("SQUOTE: " + s[i:i+j+1])
-	    i = i +j + 1
+	    i = i + j + 1
 	    continue
 
 	# newlines
@@ -167,15 +196,15 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	    i = i+1
 	    continue
 
-	#leading spaces
-	if optWhite and (ch == ' ' or ch == '\n' or ch == '\t') and chars.find(s[i+1]) != -1:
-	    i = i+1
-	    continue
-
-        #trailing spaces
-	if optWhite and (ch == ' ' or ch == '\n' or ch == '\t') and chars.find(s[i-1]) != -1:
-	    i = i+1
-	    continue
+	if optWhite and iswhite(ch):
+            #trailing spaces
+	    if chars.find(s[i-1]) != -1:
+	        i=i+1
+	        continue
+            # leading spaces
+            if chars.find(s[i+1]) != -1:
+	        i = i+1
+	        continue
 
 	result.append(ch)
 	i=i+1
