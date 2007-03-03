@@ -95,7 +95,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
     # items that don't need spaces next to them
     #
     chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r\'"[]'
-    tokens = ("do", "var", "function", "new", "case")
+    tokens = ("do", "var", "function", "new", "case", "void", "typeof", "delete")
     while (i < slen):
         # skip all "boring" characters.  This is either
         # reserved word (e.g. "for", "else", "if") or a
