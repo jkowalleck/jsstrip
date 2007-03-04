@@ -37,7 +37,7 @@
 # The BSD License 
 # http://www.opensource.org/licenses/bsd-license.php
 #
-# Copyright (c) 2005, 2006 Nick Galbreath
+# Copyright (c) 2005, 2006, 2007 Nick Galbreath
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
