@@ -90,12 +90,17 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
     j = 0        # char forward index for input string
     slen = len(s) # size of input string
     line = 0     # line number of file (close to it anyways)
-    
+
     #
     # items that don't need spaces next to them
     #
     chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r\'"[]'
-    tokens = ("do", "var", "function", "new", "case", "void", "typeof", "delete")
+
+    # skip all initial whitespace.. this is a bit of hack
+    # to get the rest of the loop correct
+    while (i < slen and iswhite(s[i])):
+        i = i + 1
+    
     while (i < slen):
         # skip all "boring" characters.  This is either
         # reserved word (e.g. "for", "else", "if") or a
@@ -105,20 +110,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
             j = j + 1
         if i != j:
             token = s[i:j]
-            if j != slen and iswhite(s[j+1]) and (token in tokens):
-               # could check to see if last token was ";" since I think it 
-               # has to be
-               result.append(token + " ")
-            elif len(result) > 0 and result[len(result)-1] == "else":
-               # else is wierd since it can have two forms
-               # "} else" and " else"
-               result.append(" " + token)
-            elif iswhite(s[j+1]) and token == "in":
-               # "in" is another weird one since it must have
-               # whitespace on both sides
-               result.append(" " + token + " ")
-            else:
-               result.append(token)
+            result.append(token)
             i = j
 
         ch = s[i]
@@ -188,23 +180,25 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	    continue
 
 	# newlines
+        # this is just for error and debugging output
 	if ch == '\n' or ch == '\r':
-	    line = line +1
+	    line = line + 1
 	    debug("LINE: " + str(line))
-	    if not optWhite:
-		result.append(ch)
-	    i = i+1
-	    continue
 
 	if optWhite and iswhite(ch):
-            #trailing spaces
-	    if chars.find(s[i-1]) != -1:
+            # leading spaces
+            if i+1 < slen and chars.find(s[i+1]) != -1:
 	        i=i+1
 	        continue
-            # leading spaces
-            if chars.find(s[i+1]) != -1:
-	        i = i+1
+            #trailing spaces
+            # if this ch is space AND the last char processed
+            # is special, then skip the space
+	    if len(result) > 0 and chars.find(result[-1]) != -1:
+	        i=i+1
 	        continue
+            # else after all of this convert the "whitespace" to
+            # a single space.  It will get appended below
+            ch = ' '
 
 	result.append(ch)
 	i=i+1
