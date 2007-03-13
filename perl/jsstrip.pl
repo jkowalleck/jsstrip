@@ -244,11 +244,11 @@ sub strip ($;$;$;$;$;$) {
       $j = 1;
       while(substr($s, $i+$j, 1) ne "'") {
 # *****
-        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'");
-#        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'") {
-#          $j = $j+1;
-#          die "Found invalid '' string" if($i+$j >= $slen);
-#        }
+#        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'");
+        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'") {
+          $j = $j+1;
+          die "Found invalid '' string" if($i+$j >= $slen);
+        }
 # *****
         $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
       }
