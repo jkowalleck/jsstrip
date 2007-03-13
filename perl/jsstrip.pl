@@ -3,11 +3,16 @@
 # jsstrip.pl
 # removes comments and whitespace from javascript files
 
-# 03-Mar-2007
-# 28-Feb-2007
-# 26-Feb-2007 Port from the original jsstrip.py to Perl by Theo Niessink
+# 26-Feb-2007 - 13-Mar-2007 Port from the original jsstrip.py to Perl by
+#  Theo Niessink
+#
 #  Fixed a bug that prevented required trailing spaces from appearing in
 #  the javascript output
+#
+#  Added validation checks to '' and "" strings and // regexps to prevent
+#  infinite loops
+#
+#  Added support for (Microsoft JScript) conditional /*@..*/ statements
 #
 # version 1.03
 # 10-Aug-2006 Fix command-line args bug with -q and -quiet
@@ -73,7 +78,7 @@
 package jsstrip;
 
 use strict;
-#use warnings;
+use warnings;
 
 #
 # Handy debug script
@@ -103,22 +108,55 @@ sub strip ($;$;$;$;$;$) {
   #
   # items that don't need spaces next to them
   #
-#  my $chars = "^&|!+-*/%=?:;,{}()<>% \t\n\r";
-my $chars = "^&|!+-*/%=?:;,{}()<>% \t\n\r\'\"[]";
-my $spaces = " \n\r\t";
+  my $chars = "^&|!+-*/%=?:;,{}()<>% \t\n\r\'\"[]";
 
-  while($i < length($s)) {
+# *****
+  #
+  # chars that are considered whitespaces
+  #
+  my $spaces = " \n\r\t";
+# *****
+
+# *****
+  # skip all initial whitespace.. this is a bit of hack 
+  # to get the rest of the loop correct
+#  while($i < $slen and index($spaces, substr($s, $i, 1)) != -1) {
+#    $i = $i+1;
+#  }
+# *****
+
+  while($i < $slen) {
+    # skip all "boring" characters.  This is either
+    # reserved word (e.g. "for", "else", "if") or a
+    # variable/object/method (e.g. "foo.color")
+    $j = $i;
+    while($j < $slen and index($chars, substr($s, $j, 1)) == -1) {
+      $j = $j+1;
+    }
+    if($i != $j) {
+      my $token = substr($s, $i, $j -$i);
+      push(@result, $token);
+      $i = $j;
+# *****
+      last if($i >= $slen);
+# *****
+    }
+
     my $ch = substr($s, $i, 1);
-
     # multiline comments
     if($ch eq "/" and substr($s, $i+1, 1) eq "*") {
       my $endC = index($s, "*/", $i+2);
       die "Found invalid /*..*/ comment" if($endC == -1);
-      if($optSaveFirst and $line == 0) {
+# *****
+#      if($optSaveFirst and $line == 0) {
+#        push(@result, substr($s, $i, $endC+2 -$i)."\n");
+#      } elsif(!$optMulti) {
+#        push(@result, "\n".substr($s, $i, $endC+2 -$i)."\n");
+#      }
+      if(($optSaveFirst and $line == 0) or !$optMulti or substr($s, $i+2, 1) eq '@') {
         push(@result, substr($s, $i, $endC+2 -$i)."\n");
-      } elsif(!$optMulti) {
-        push(@result, "\n".substr($s, $i, $endC+2 -$i)."\n");
       }
+# *****
       # count how many newlines for debuggin purposes
       $j = $i+1;
       while($j < $endC) {
@@ -133,13 +171,24 @@ my $spaces = " \n\r\t";
     # singleline
     if($ch eq "/" and substr($s, $i+1, 1) eq "/") {
       my $endC = index($s, "\n", $i+2);
-      die "Found invalid // comment" if($endC == -1);
-      if($optSaveFirst and $line == 0) {
-        push(@result, substr($s, $i, $endC+1 -$i)."\n");
-      } elsif(!$optSingle) {
-        push(@result, " ".substr($s, $i, $endC+1 -$i)."\n");
+# *****
+#      die "Found invalid // comment" if($endC == -1);
+#      if($optSaveFirst and $line == 0) {
+#        push(@result, substr($s, $i, $endC+1 -$i)."\n");
+#      } elsif(!$optSingle) {
+#        push(@result, " ".substr($s, $i, $endC+1 -$i)."\n");
+#      }
+#      $i = $endC;
+      my $nextC = $endC;
+      if($endC == -1) {
+        $endC = $slen-1;
+        $nextC = $slen;
       }
-      $i = $endC;
+      if(($optSaveFirst and $line == 0) or !$optSingle or substr($s, $i+2, 1) eq '@') {
+        push(@result, substr($s, $i, $endC+1 -$i));
+      }
+      $i = $nextC;
+# *****
       next;
     }
 
@@ -154,7 +203,13 @@ my $spaces = " \n\r\t";
         # now move forward and find the end of it
         $j = 1;
         while(substr($s, $i+$j, 1) ne "/") {
-          $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/");
+# *****
+#          $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/");
+          while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/") {
+            $j = $j+1;
+            die "Found invalid // regexp" if($i+$j >= $slen);
+          }
+# *****
           $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
         }
         push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -167,9 +222,15 @@ my $spaces = " \n\r\t";
 
     # double quote strings
     if($ch eq '"') {
-      my $j = 1;
+      $j = 1;
       while(substr($s, $i+$j, 1) ne '"') {
-        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"');
+# *****
+#        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"');
+        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"') {
+          $j = $j+1;
+          die "Found invalid \"\" string" if($i+$j >= $slen);
+        }
+# *****
         $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
       }
       push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -180,9 +241,15 @@ my $spaces = " \n\r\t";
 
     # single quote strings
     if($ch eq "'") {
-      my $j = 1;
+      $j = 1;
       while(substr($s, $i+$j, 1) ne "'") {
+# *****
         $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'");
+#        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'") {
+#          $j = $j+1;
+#          die "Found invalid '' string" if($i+$j >= $slen);
+#        }
+# *****
         $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
       }
       push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -192,25 +259,48 @@ my $spaces = " \n\r\t";
     }
 
     # newlines
+    # this is just for error and debugging output
     if($ch eq "\n" or $ch eq "\r") {
       $line = $line+1;
       &$debug("LINE: $line");
     }
 
-    # leading spaces
-    if($optWhite and index($spaces, $ch) != -1 and index($chars, substr($s, $i+1, 1)) != -1) {
-      $i = $i+1;
-      next;
-    }
-
-    # trailing spaces
+# *****
+#    if($optWhite and iswhite($ch)) {
+#      # leading spaces
+#      if($i+1 < $slen and iswhite(substr($s, $i+1, 1))) {
+#        $i = $i+1;
+#        next;
+#      }
+#      # trailing spaces
+#      # if this ch is space AND the last char processed
+#      # is special, then skip the space
+#      if($#result >= 0 and index($chars, $result[-1]) != -1) {
+#        $i = $i+1;
+#        next;
+#      }
+#      # else after all of this convert the "whitespace" to
+#      # a single space.  It will get appended below
+#      $ch = " ";
+#    }
     if($optWhite and index($spaces, $ch) != -1) {
-      if($#result == -1 or index($chars, substr($result[-1], -1, 1)) != -1) {
+      # leading spaces
+      if(index($chars, substr($s, $i+1, 1)) != -1) {
         $i = $i+1;
         next;
       }
+      # trailing spaces
+      # if this ch is space AND the last char processed
+      # is special, then skip the space
+      if($#result == -1 or index($chars, substr($result[-1], -1)) != -1) {
+        $i = $i+1;
+        next;
+      }
+      # else after all of this convert the "whitespace" to
+      # a single space.  It will get appended below
       $ch = " ";
     }
+# *****
 
     push(@result, $ch);
     $i = $i+1;

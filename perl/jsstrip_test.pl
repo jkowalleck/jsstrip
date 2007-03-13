@@ -1,21 +1,22 @@
 #!/usr/bin/perl
 
 use strict;
-#use warnings;
+use warnings;
 
 use Test;
-BEGIN { plan tests => 18 }
+BEGIN { plan tests => 21 }
 
 require "jsstrip.pl";
 *strip = \&jsstrip::strip;
 
 use FileHandle;
 
-sub readTwo ($) {
-  my ($s) = @_;
+sub readTwo ($;$) {
+  my ($s, $dir) = @_;
+  $dir = "../testfiles" unless(defined $dir);
 
-  my $f1name = sprintf("../testfiles/test-%s-in.js", $s);
-  my $f2name = sprintf("../testfiles/test-%s-out.js", $s);
+  my $f1name = sprintf("%s/test-%s-in.js", $dir, $s);
+  my $f2name = sprintf("%s/test-%s-out.js", $dir, $s);
   my $fh = new FileHandle $f1name or die $f1name;
   my $testinput = join('', $fh->getlines());
   $fh->close;
@@ -25,6 +26,7 @@ sub readTwo ($) {
   return ($testinput, $testoutput);
 }
 
+# Test files in the default testfiles folder
 foreach(qw(
   IfThenElseBraces
   IfThenElseNoBraces
@@ -46,5 +48,15 @@ foreach(qw(
   StatementSwitchCase
 )) {
   my ($input, $output) = readTwo($_);
+  ok(strip($input), $output);
+};
+
+# Local test files
+foreach(qw(
+  CommentSingleLastLine
+  Conditional
+  CommentConditional
+)) {
+  my ($input, $output) = readTwo($_, ".");
   ok(strip($input), $output);
 };
