@@ -4,3 +4,7 @@
   @else */
     document.write("Dunno");
 //@end
+
+// The next line won't be stripped (although it could be...)
+//@if (@_jscript)
+//@end

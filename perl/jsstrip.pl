@@ -144,7 +144,10 @@ sub strip ($;$;$;$;$;$) {
 
     my $ch = substr($s, $i, 1);
     # multiline comments
-    if($ch eq "/" and substr($s, $i+1, 1) eq "*") {
+# *****
+#    if($ch eq "/" and substr($s, $i+1, 1) eq "*") {
+    if($ch eq "/" and substr($s, $i+1, 1) eq "*" and substr($s, $i+2, 1) ne '@') {
+# *****
       my $endC = index($s, "*/", $i+2);
       die "Found invalid /*..*/ comment" if($endC == -1);
 # *****
@@ -153,7 +156,7 @@ sub strip ($;$;$;$;$;$) {
 #      } elsif(!$optMulti) {
 #        push(@result, "\n".substr($s, $i, $endC+2 -$i)."\n");
 #      }
-      if(($optSaveFirst and $line == 0) or !$optMulti or substr($s, $i+2, 1) eq '@') {
+      if(($optSaveFirst and $line == 0) or !$optMulti) {
         push(@result, substr($s, $i, $endC+2 -$i)."\n");
       }
 # *****
