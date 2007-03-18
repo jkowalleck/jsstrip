@@ -96,5 +96,18 @@ class jsstriptUnitTest(unittest.TestCase):
         (input,output) = self.readTwo("NoWhitespace")
         self.assertEqual(strip(input), output)
 
+    # test MSIE conditional comments
+    def testConditional(self):
+	(input,output) = self.readTwo("Conditional")
+        self.assertEqual(strip(input), output)
+
+    def testCommentConditional(self):
+	(input,output) = self.readTwo("CommentConditional")
+        self.assertEqual(strip(input), output)
+
+    def testCommentSingleLastLine(self):
+	(input,output) = self.readTwo("CommentSingleLastLine")
+        self.assertEqual(strip(input), output)
+
 if __name__ == '__main__':
     unittest.main()
