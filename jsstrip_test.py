@@ -69,6 +69,10 @@ class jsstriptUnitTest(unittest.TestCase):
         (input,output) = self.readTwo("RegexpBackslash")
         self.assertEqual(strip(input), output)
 
+    def testRegexgStringQuotes(self):
+        (input,output) = self.readTwo("RegexpStringQuotes")
+        self.assertEqual(strip(input), output)
+
     def testStringDoubleQuotes(self):
         (input,output) = self.readTwo("StringDoubleQuotes")
         self.assertEqual(strip(input), output)
