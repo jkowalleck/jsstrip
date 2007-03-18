@@ -114,6 +114,12 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
             result.append(token)
             i = j
 
+        if (i >= slen):
+            # last line was unterminated with ";"
+            # might want to either throw an exception
+            # print a warning message
+            break
+
         ch = s[i]
 	# multiline comments
 	if ch == '/' and s[i+1] == '*':
