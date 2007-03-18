@@ -80,10 +80,6 @@ def debugOn(s):
 def debugOff(s):
     pass
 
-def iswhite(ch):
-    return ch == ' ' or ch == '\n' or ch == '\r' or ch == '\t'
-
-
 def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, debug=debugOff):
     result = []  # result array.  gets joined at end.
     i = 0        # char index for input string
@@ -92,13 +88,18 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
     line = 0     # line number of file (close to it anyways)
 
     #
+    # whitespace characters
+    # 
+    whitespace = ' \n\r\t'
+
+    #
     # items that don't need spaces next to them
     #
     chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r\'"[]'
 
     # skip all initial whitespace.. this is a bit of hack
     # to get the rest of the loop correct
-    while (i < slen and iswhite(s[i])):
+    while (i < slen and whitespace.find(s[i]) != -1):
         i = i + 1
     
     while (i < slen):
@@ -185,7 +186,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	    line = line + 1
 	    debug("LINE: " + str(line))
 
-	if optWhite and iswhite(ch):
+	if optWhite and whitespace.find(ch) != -1:
             # leading spaces
             if i+1 < slen and chars.find(s[i+1]) != -1:
 	        i=i+1
