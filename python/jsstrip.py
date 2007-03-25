@@ -4,6 +4,13 @@
 # jsstrip.py
 # removes comments and whitespace from javascript files
 #
+# 25-Mar-2007
+#   remove a few extra spots of whitespace
+#   fix exception handling
+#   do not strip MSIE conditional comments
+#   remove MS-DOS newlines (\r)
+#   when saving single-comments, remove ending whitespace
+#
 # 01-Mar-2007
 #   import into http://code.google.com/p/jsstrip/
 #   no changes
@@ -97,11 +104,6 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
     #
     chars = '^&|!+-*/%=?:;,{}()<>% \t\n\r\'"[]'
 
-    # skip all initial whitespace.. this is a bit of hack
-    # to get the rest of the loop correct
-    while (i < slen and whitespace.find(s[i]) != -1):
-        i = i + 1
-    
     while (i < slen):
         # skip all "boring" characters.  This is either
         # reserved word (e.g. "for", "else", "if") or a
@@ -122,11 +124,12 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 
         ch = s[i]
 	# multiline comments
-	if ch == '/' and s[i+1] == '*':
+	if ch == '/' and s[i+1] == '*' and s[i+2] != '@':
 	    endC = s.find('*/',i+2)
 	    if endC == -1: raise Exception('Found invalid /*..*/ comment')
-	    if optSaveFirst and line == 0: result.append(s[i:endC+2]+"\n")
-            elif not optMulti: result.append("\n" + s[i:endC+2] + "\n")
+            if (optSaveFirst and line == 0) or not optMulti:
+                result.append(s[i:endC+2]+"\n")
+
 	    # count how many newlines for debuggin purposes
 	    j = i+1
 	    while j < endC:
@@ -139,10 +142,26 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	# singleline
 	if ch == '/' and s[i+1] == '/':
 	    endC = s.find('\n',i+2)
-	    if endC == -1: raise Exception('Found invalid // comment')
-	    if optSaveFirst and line == 0: result.append(s[i:endC+1]+"\n")
-            elif not optSingle: result.append(" " + s[i:endC+1] + "\n")
-	    i = endC
+	    #if endC == -1: raise Exception('Found invalid // comment')
+	    #if optSaveFirst and line == 0: result.append(s[i:endC+1]+"\n")
+            #elif not optSingle: result.append(" " + s[i:endC+1] + "\n")
+	    #i = endC
+            nextC = endC
+            if endC == -1:
+                endC = slen - 1
+                nextC = slen
+            else:
+                # rewind and remove any "\r" or trailing whitespace IN the comment
+                # e.g. "//foo   " --> "//foo"
+                while whitespace.find(s[endC]) != -1:
+                    endC = endC - 1
+
+            # save only if it's the VERY first thing in the file and optSaveFirst is on
+            # or if we are saving all // comments
+            # or if it's an MSIE conditional comment
+            if (optSaveFirst and line == 0 and i == 0) or not optSingle or s[i+2] == '@':
+                result.append(s[i:endC+1] + "\n")
+            i = nextC
 	    continue
 
 	# tricky.  might be an RE
@@ -200,7 +219,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
             #trailing spaces
             # if this ch is space AND the last char processed
             # is special, then skip the space
-	    if len(result) > 0 and chars.find(result[-1]) != -1:
+	    if len(result) == 0 or chars.find(result[-1][-1]) != -1:
 	        i=i+1
 	        continue
             # else after all of this convert the "whitespace" to
@@ -209,6 +228,10 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 
 	result.append(ch)
 	i=i+1
+
+    # remove last space, it might have been added by mistake at the end
+    if len(result[-1]) == 1 and whitespace.find(result[-1]) != -1:
+        result.pop()
 
     return ''.join(result)
 
