@@ -142,10 +142,6 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	# singleline
 	if ch == '/' and s[i+1] == '/':
 	    endC = s.find('\n',i+2)
-	    #if endC == -1: raise Exception('Found invalid // comment')
-	    #if optSaveFirst and line == 0: result.append(s[i:endC+1]+"\n")
-            #elif not optSingle: result.append(" " + s[i:endC+1] + "\n")
-	    #i = endC
             nextC = endC
             if endC == -1:
                 endC = slen - 1
