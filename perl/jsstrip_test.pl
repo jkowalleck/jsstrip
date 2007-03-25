@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -46,17 +46,10 @@ foreach(qw(
   StatementDoWhile
   StatementForIn
   StatementSwitchCase
-)) {
-  my ($input, $output) = readTwo($_);
-  ok(strip($input), $output);
-};
-
-# Local test files
-foreach(qw(
   CommentSingleLastLine
   Conditional
   CommentConditional
 )) {
-  my ($input, $output) = readTwo($_, ".");
+  my ($input, $output) = readTwo($_);
   ok(strip($input), $output);
 };

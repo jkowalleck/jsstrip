@@ -124,7 +124,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	# multiline comments
 	if ch == '/' and s[i+1] == '*':
 	    endC = s.find('*/',i+2)
-	    if endC == -1: raise exception('Found invalid /*..*/ comment')
+	    if endC == -1: raise Exception('Found invalid /*..*/ comment')
 	    if optSaveFirst and line == 0: result.append(s[i:endC+2]+"\n")
             elif not optMulti: result.append("\n" + s[i:endC+2] + "\n")
 	    # count how many newlines for debuggin purposes
@@ -139,7 +139,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
 	# singleline
 	if ch == '/' and s[i+1] == '/':
 	    endC = s.find('\n',i+2)
-	    if endC == -1: raise exception('Found invalid // comment')
+	    if endC == -1: raise Exception('Found invalid // comment')
 	    if optSaveFirst and line == 0: result.append(s[i:endC+1]+"\n")
             elif not optSingle: result.append(" " + s[i:endC+1] + "\n")
 	    i = endC

@@ -1,4 +1,14 @@
 
+.PHONY: clean test test-python test-perl
+
+test-python:
+	./jsstrip_test.py
+
+test-perl:
+	(cd perl; perl jsstrip_test.pl ../testfiles)
+
+test: test-python test-perl
+
 #
 # remove python compiled files
 # remove emacs turds

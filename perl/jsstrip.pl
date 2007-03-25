@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # jsstrip.pl
 # removes comments and whitespace from javascript files
