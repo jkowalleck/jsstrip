@@ -15,7 +15,7 @@ test: test-python test-perl
 # remove coverage file
 #
 clean:
-	rm -rf *.pyc
+	find . -name '*.pyc' | xargs rm -f
 	find . -name '*~' | xargs rm -f
 	find . -name '\#*' | xargs rm -f
 	rm -f .coverage
