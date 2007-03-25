@@ -7,8 +7,8 @@ import unittest
 
 class jsstriptUnitTest(unittest.TestCase):
     def readTwo(self, s):
-        f1name = "testfiles/test-%s-in.js" % s
-        f2name = "testfiles/test-%s-out.js" % s
+        f1name = "../testfiles/test-%s-in.js" % s
+        f2name = "../testfiles/test-%s-out.js" % s
         fh = open(f1name);
         testinput = fh.read()
         fh.close()
