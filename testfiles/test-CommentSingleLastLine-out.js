@@ -1,2 +1,1 @@
-var foo='bar';// English
-var voet='bal';
+var foo='bar';var voet='bal';
