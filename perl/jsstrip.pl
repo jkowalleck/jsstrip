@@ -2,17 +2,23 @@
 #
 # jsstrip.pl
 # removes comments and whitespace from javascript files
-
-# 26-Feb-2007 - 13-Mar-2007 Port from the original jsstrip.py to Perl by
-#  Theo Niessink
 #
-#  Fixed a bug that prevented required trailing spaces from appearing in
-#  the javascript output
+# 19-Oct-2007
+#   (Finally) updated the Perl port with the changes from March
 #
-#  Added validation checks to '' and "" strings and // regexps to prevent
-#  infinite loops
+# 25-Mar-2007
+#   remove a few extra spots of whitespace
+#   fix exception handling
+#   do not strip MSIE conditional comments
+#   remove MS-DOS newlines (\r)
+#   when saving single-comments, remove ending whitespace
 #
-#  Added support for (Microsoft JScript) conditional /*@..*/ statements
+# 01-Mar-2007
+#   import into http://code.google.com/p/jsstrip/
+#   no changes
+#
+# 26-Feb-2007
+#   Port from the original jsstrip.py to Perl by Theo Niessink
 #
 # version 1.03
 # 10-Aug-2006 Fix command-line args bug with -q and -quiet
@@ -36,12 +42,14 @@
 # nickg
 #      @
 #       modp.com
+#
+#
 
 #
 # The BSD License 
 # http://www.opensource.org/licenses/bsd-license.php
 #
-# Copyright (c) 2005, 2006 Nick Galbreath
+# Copyright (c) 2005, 2006, 2007 Nick Galbreath
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -106,24 +114,14 @@ sub strip ($;$;$;$;$;$) {
   my $line = 0;          # line number of file (close to it anyways)
 
   #
+  # whitespace characters
+  # 
+  my $whitespace = " \n\r\t";
+
+  #
   # items that don't need spaces next to them
   #
   my $chars = "^&|!+-*/%=?:;,{}()<>% \t\n\r\'\"[]";
-
-# *****
-  #
-  # chars that are considered whitespaces
-  #
-  my $spaces = " \n\r\t";
-# *****
-
-# *****
-  # skip all initial whitespace.. this is a bit of hack 
-  # to get the rest of the loop correct
-#  while($i < $slen and index($spaces, substr($s, $i, 1)) != -1) {
-#    $i = $i+1;
-#  }
-# *****
 
   while($i < $slen) {
     # skip all "boring" characters.  This is either
@@ -137,29 +135,24 @@ sub strip ($;$;$;$;$;$) {
       my $token = substr($s, $i, $j -$i);
       push(@result, $token);
       $i = $j;
-# *****
-      last if($i >= $slen);
-# *****
+    }
+
+    if($i >= $slen) {
+      # last line was unterminated with ";"
+      # might want to either throw an exception
+      # print a warning message
+      last;
     }
 
     my $ch = substr($s, $i, 1);
     # multiline comments
-# *****
-#    if($ch eq "/" and substr($s, $i+1, 1) eq "*") {
     if($ch eq "/" and substr($s, $i+1, 1) eq "*" and substr($s, $i+2, 1) ne '@') {
-# *****
       my $endC = index($s, "*/", $i+2);
       die "Found invalid /*..*/ comment" if($endC == -1);
-# *****
-#      if($optSaveFirst and $line == 0) {
-#        push(@result, substr($s, $i, $endC+2 -$i)."\n");
-#      } elsif(!$optMulti) {
-#        push(@result, "\n".substr($s, $i, $endC+2 -$i)."\n");
-#      }
       if(($optSaveFirst and $line == 0) or !$optMulti) {
         push(@result, substr($s, $i, $endC+2 -$i)."\n");
       }
-# *****
+
       # count how many newlines for debuggin purposes
       $j = $i+1;
       while($j < $endC) {
@@ -174,24 +167,25 @@ sub strip ($;$;$;$;$;$) {
     # singleline
     if($ch eq "/" and substr($s, $i+1, 1) eq "/") {
       my $endC = index($s, "\n", $i+2);
-# *****
-#      die "Found invalid // comment" if($endC == -1);
-#      if($optSaveFirst and $line == 0) {
-#        push(@result, substr($s, $i, $endC+1 -$i)."\n");
-#      } elsif(!$optSingle) {
-#        push(@result, " ".substr($s, $i, $endC+1 -$i)."\n");
-#      }
-#      $i = $endC;
       my $nextC = $endC;
       if($endC == -1) {
         $endC = $slen-1;
         $nextC = $slen;
+      } else {
+        # rewind and remove any "\r" or trailing whitespace IN the comment
+        # e.g. "//foo   " --> "//foo"
+        while(index($whitespace, substr($s, $endC, 1)) != -1) {
+          $endC = $endC-1;
+        }
       }
-      if(($optSaveFirst and $line == 0) or !$optSingle or substr($s, $i+2, 1) eq '@') {
-        push(@result, substr($s, $i, $endC+1 -$i));
+
+      # save only if it's the VERY first thing in the file and optSaveFirst is on
+      # or if we are saving all // comments
+      # or if it's an MSIE conditional comment
+      if(($optSaveFirst and $line == 0 and $i == 0) or !$optSingle or substr($s, $i+2, 1) eq '@') {
+        push(@result, substr($s, $i, $endC+1 -$i)."\n");
       }
       $i = $nextC;
-# *****
       next;
     }
 
@@ -206,13 +200,7 @@ sub strip ($;$;$;$;$;$) {
         # now move forward and find the end of it
         $j = 1;
         while(substr($s, $i+$j, 1) ne "/") {
-# *****
-#          $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/");
-          while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/") {
-            $j = $j+1;
-            die "Found invalid // regexp" if($i+$j >= $slen);
-          }
-# *****
+          $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "/");
           $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
         }
         push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -227,13 +215,7 @@ sub strip ($;$;$;$;$;$) {
     if($ch eq '"') {
       $j = 1;
       while(substr($s, $i+$j, 1) ne '"') {
-# *****
-#        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"');
-        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"') {
-          $j = $j+1;
-          die "Found invalid \"\" string" if($i+$j >= $slen);
-        }
-# *****
+        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne '"');
         $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
       }
       push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -246,13 +228,7 @@ sub strip ($;$;$;$;$;$) {
     if($ch eq "'") {
       $j = 1;
       while(substr($s, $i+$j, 1) ne "'") {
-# *****
-#        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'");
-        while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'") {
-          $j = $j+1;
-          die "Found invalid '' string" if($i+$j >= $slen);
-        }
-# *****
+        $j = $j+1 while(substr($s, $i+$j, 1) ne "\\" and substr($s, $i+$j, 1) ne "'");
         $j = $j+2 if(substr($s, $i+$j, 1) eq "\\");
       }
       push(@result, substr($s, $i, $i+$j+1 -$i));
@@ -265,30 +241,12 @@ sub strip ($;$;$;$;$;$) {
     # this is just for error and debugging output
     if($ch eq "\n" or $ch eq "\r") {
       $line = $line+1;
-      &$debug("LINE: $line");
+      &$debug("LINE: ".$line);
     }
 
-# *****
-#    if($optWhite and iswhite($ch)) {
-#      # leading spaces
-#      if($i+1 < $slen and iswhite(substr($s, $i+1, 1))) {
-#        $i = $i+1;
-#        next;
-#      }
-#      # trailing spaces
-#      # if this ch is space AND the last char processed
-#      # is special, then skip the space
-#      if($#result >= 0 and index($chars, $result[-1]) != -1) {
-#        $i = $i+1;
-#        next;
-#      }
-#      # else after all of this convert the "whitespace" to
-#      # a single space.  It will get appended below
-#      $ch = " ";
-#    }
-    if($optWhite and index($spaces, $ch) != -1) {
+    if($optWhite and index($whitespace, $ch) != -1) {
       # leading spaces
-      if(index($chars, substr($s, $i+1, 1)) != -1) {
+      if($i+1 < $slen and index($chars, substr($s, $i+1, 1)) != -1) {
         $i = $i+1;
         next;
       }
@@ -303,10 +261,14 @@ sub strip ($;$;$;$;$;$) {
       # a single space.  It will get appended below
       $ch = " ";
     }
-# *****
 
     push(@result, $ch);
     $i = $i+1;
+  }
+
+  # remove last space, it might have been added by mistake at the end
+  if(length($result[-1]) == 1 and index($whitespace, $result[-1]) != -1) {
+    pop(@result);
   }
 
   return join('', @result);
@@ -345,6 +307,7 @@ EOF
 }
 
 sub main () {
+#  my $OPT_DEBUG = '';
   my $OPT_QUIET = '';
   my $OPT_WHITE = 1;
   my $OPT_SINGLE = 1;
