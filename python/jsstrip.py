@@ -309,7 +309,7 @@ def main(argv):
     snew = strip(s, OPT_FIRST, OPT_WHITE, OPT_SINGLE, OPT_MULTI, OPT_DEBUG)
 
     if not OPT_NOP:
-        print snew
+        print(snew)
 
     if not OPT_QUIET:
         sys.stderr.write("In: " + str(len(s)) + ", Out: " + str(len(snew)) + ", Savings: " + str(100.0 *(1.0 - float(len(snew))/len(s))) + '\n')
