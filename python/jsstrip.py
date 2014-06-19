@@ -107,9 +107,9 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
     while (i < slen):
         # skip all "boring" characters.  This is either
         # reserved word (e.g. "for", "else", "if") or a
-	# variable/object/method (e.g. "foo.color")
-	j = i
-	while (j < slen and chars.find(s[j]) == -1):
+        # variable/object/method (e.g. "foo.color")
+        j = i
+        while (j < slen and chars.find(s[j]) == -1):
             j = j + 1
         if i != j:
             token = s[i:j]
@@ -123,25 +123,25 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
             break
 
         ch = s[i]
-	# multiline comments
-	if ch == '/' and s[i+1] == '*' and s[i+2] != '@':
-	    endC = s.find('*/',i+2)
-	    if endC == -1: raise Exception('Found invalid /*..*/ comment')
+        # multiline comments
+        if ch == '/' and s[i+1] == '*' and s[i+2] != '@':
+            endC = s.find('*/',i+2)
+            if endC == -1: raise Exception('Found invalid /*..*/ comment')
             if (optSaveFirst and line == 0) or not optMulti:
                 result.append(s[i:endC+2]+"\n")
 
-	    # count how many newlines for debuggin purposes
-	    j = i+1
-	    while j < endC:
-		if s[j] == '\n': line = line +1
-		j = j+1
-	    # keep going
-	    i = endC +2
-	    continue
+            # count how many newlines for debuggin purposes
+            j = i+1
+            while j < endC:
+                if s[j] == '\n': line = line +1
+                j = j+1
+            # keep going
+            i = endC +2
+            continue
 
-	# singleline
-	if ch == '/' and s[i+1] == '/':
-	    endC = s.find('\n',i+2)
+        # singleline
+        if ch == '/' and s[i+1] == '/':
+            endC = s.find('\n',i+2)
             nextC = endC
             if endC == -1:
                 endC = slen - 1
@@ -158,72 +158,72 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
             if (optSaveFirst and line == 0 and i == 0) or not optSingle or s[i+2] == '@':
                 result.append(s[i:endC+1] + "\n")
             i = nextC
-	    continue
+            continue
 
-	# tricky.  might be an RE
-	if ch == '/':
-	    # rewind, skip white space
-	    j= 1;
-	    while s[i-j] == ' ': j = j +1
-	    debug("REGEXP: " +str(j)+" backup found '" + s[i-j] + "'")
-	    if s[i-j] == '=' or s[i-j] == '(':
-		# yes, this is an re
-		# now move forward and find the end of it
-		j = 1
-		while (s[i+j] != '/'):
-		    while s[i+j] != '\\' and s[i+j] != '/': j = j+1
-		    if s[i+j] == '\\': j=j+2
-		result.append(s[i:i+j+1])
-		debug("REGEXP: " + s[i:i+j+1])
-		i = i +j + 1
-		debug("REGEXP: now at " + ch)
-		continue
+        # tricky.  might be an RE
+        if ch == '/':
+            # rewind, skip white space
+            j= 1;
+            while s[i-j] == ' ': j = j +1
+            debug("REGEXP: " +str(j)+" backup found '" + s[i-j] + "'")
+            if s[i-j] == '=' or s[i-j] == '(':
+                # yes, this is an re
+                # now move forward and find the end of it
+                j = 1
+                while (s[i+j] != '/'):
+                    while s[i+j] != '\\' and s[i+j] != '/': j = j+1
+                    if s[i+j] == '\\': j=j+2
+                result.append(s[i:i+j+1])
+                debug("REGEXP: " + s[i:i+j+1])
+                i = i +j + 1
+                debug("REGEXP: now at " + ch)
+                continue
 
-	#double quote strings
-	if ch == '"':
-	    j = 1
-	    while (s[i+j] != '"'):
-		while s[i+j] != '\\' and s[i+j] != '"': j = j+1
-		if s[i+j] == '\\': j=j+2
-	    result.append(s[i:i+j+1])
-	    debug("DQUOTE: " + s[i:i+j+1])
-	    i = i + j + 1
-	    continue
+        #double quote strings
+        if ch == '"':
+            j = 1
+            while (s[i+j] != '"'):
+                while s[i+j] != '\\' and s[i+j] != '"': j = j+1
+                if s[i+j] == '\\': j=j+2
+            result.append(s[i:i+j+1])
+            debug("DQUOTE: " + s[i:i+j+1])
+            i = i + j + 1
+            continue
 
-	# single quote strings
-	if ch == "'":
-	    j = 1
-	    while (s[i+j] != "'"):
-		while s[i+j] != '\\' and s[i+j] != "'": j = j+1
-		if s[i+j] == '\\': j=j+2
-	    result.append(s[i:i+j+1])
-	    debug("SQUOTE: " + s[i:i+j+1])
-	    i = i + j + 1
-	    continue
+        # single quote strings
+        if ch == "'":
+            j = 1
+            while (s[i+j] != "'"):
+                while s[i+j] != '\\' and s[i+j] != "'": j = j+1
+                if s[i+j] == '\\': j=j+2
+            result.append(s[i:i+j+1])
+            debug("SQUOTE: " + s[i:i+j+1])
+            i = i + j + 1
+            continue
 
-	# newlines
+        # newlines
         # this is just for error and debugging output
-	if ch == '\n' or ch == '\r':
-	    line = line + 1
-	    debug("LINE: " + str(line))
+        if ch == '\n' or ch == '\r':
+            line = line + 1
+            debug("LINE: " + str(line))
 
-	if optWhite and whitespace.find(ch) != -1:
+        if optWhite and whitespace.find(ch) != -1:
             # leading spaces
             if i+1 < slen and chars.find(s[i+1]) != -1:
-	        i=i+1
-	        continue
+                i=i+1
+                continue
             #trailing spaces
             # if this ch is space AND the last char processed
             # is special, then skip the space
-	    if len(result) == 0 or chars.find(result[-1][-1]) != -1:
-	        i=i+1
-	        continue
+            if len(result) == 0 or chars.find(result[-1][-1]) != -1:
+                i=i+1
+                continue
             # else after all of this convert the "whitespace" to
             # a single space.  It will get appended below
             ch = ' '
 
-	result.append(ch)
-	i=i+1
+        result.append(ch)
+        i=i+1
 
     # remove last space, it might have been added by mistake at the end
     if len(result[-1]) == 1 and whitespace.find(result[-1]) != -1:
@@ -275,33 +275,33 @@ def main(argv):
     argsShort="d?imwfsnq"
     argsLong=['debug', 'nop', 'help', 'single', 'multi', 'white', 'first', 'quiet']
     try:
-	opts, args = getopt.getopt(argv, argsShort, argsLong)
+        opts, args = getopt.getopt(argv, argsShort, argsLong)
     except getopt.GetoptError:
-	usage()
-	sys.exit(2)
+        usage()
+        sys.exit(2)
     for opt,arg in opts:
-	if opt in ("-?", "-h", "--help"):
-	    usage()
-	    sys.exit()
-	elif opt in ("-d", "--debug"):
-	    OPT_DEBUG=debugOn
-	elif opt in ("-s", "--single"):
-	    OPT_SINGLE = False
-	elif opt in ("-m", "--multi"):
-	    OPT_MULTI = False
-	elif opt in ("-w", "--white"):
-	    OPT_WHITE = False
-	elif opt in ("-f", "--first"):
-	    OPT_FIRST = False
-	elif opt in ("-q", "--quiet"):
-	    OPT_QUIET = True
-	elif opt in ("-n", "--nop"):
-	    OPT_NOP = True
+        if opt in ("-?", "-h", "--help"):
+            usage()
+            sys.exit()
+        elif opt in ("-d", "--debug"):
+            OPT_DEBUG=debugOn
+        elif opt in ("-s", "--single"):
+            OPT_SINGLE = False
+        elif opt in ("-m", "--multi"):
+            OPT_MULTI = False
+        elif opt in ("-w", "--white"):
+            OPT_WHITE = False
+        elif opt in ("-f", "--first"):
+            OPT_FIRST = False
+        elif opt in ("-q", "--quiet"):
+            OPT_QUIET = True
+        elif opt in ("-n", "--nop"):
+            OPT_NOP = True
 
     f = sys.stdin
     if len(args) == 1:
-	# todo add exception check so error is prettier
-	f = open(args[0], "r")
+        # todo add exception check so error is prettier
+        f = open(args[0], "r")
 
     # read all of it
     s = f.read()
@@ -309,10 +309,10 @@ def main(argv):
     snew = strip(s, OPT_FIRST, OPT_WHITE, OPT_SINGLE, OPT_MULTI, OPT_DEBUG)
 
     if not OPT_NOP:
-	print snew
+        print snew
 
     if not OPT_QUIET:
-	sys.stderr.write("In: " + str(len(s)) + ", Out: " + str(len(snew)) + ", Savings: " + str(100.0 *(1.0 - float(len(snew))/len(s))) + '\n')
+        sys.stderr.write("In: " + str(len(s)) + ", Out: " + str(len(snew)) + ", Savings: " + str(100.0 *(1.0 - float(len(snew))/len(s))) + '\n')
     
 if __name__ == "__main__":
     main(sys.argv[1:])
