@@ -267,7 +267,7 @@ sub strip ($;$;$;$;$;$) {
   }
 
   # remove last space, it might have been added by mistake at the end
-  if(length($result[-1]) == 1 and index($whitespace, $result[-1]) != -1) {
+  if(@result and length($result[-1]) == 1 and index($whitespace, $result[-1]) != -1) {
     pop(@result);
   }
 

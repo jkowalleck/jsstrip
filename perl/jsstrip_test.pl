@@ -66,6 +66,11 @@ sub readTwo ($) {
 }
 
 {
+  my ($input, $output) = readTwo("CommentSinglelineFirstline");
+  ok(strip($input, 0), $output);
+}
+
+{
   my ($input, $output) = readTwo("StringSingleQuotes");
   ok(strip($input), $output);
 }

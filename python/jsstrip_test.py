@@ -49,6 +49,10 @@ class jsstriptUnitTest(unittest.TestCase):
         (input,output) = self.readTwo("CommentSingleline")
         self.assertEqual(strip(input), output)
 
+    def testCommentSinglelineFirstline(self):
+        (input,output) = self.readTwo("CommentSinglelineFirstline")
+        self.assertEqual(strip(input, optSaveFirst=False), output)
+
     def testStringSingleQuotes(self):
         (input,output) = self.readTwo("StringSingleQuotes")
         self.assertEqual(strip(input), output)

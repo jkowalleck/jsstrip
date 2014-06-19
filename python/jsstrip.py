@@ -226,7 +226,7 @@ def strip(s, optSaveFirst=True, optWhite=True, optSingle=True, optMulti=True, de
         i=i+1
 
     # remove last space, it might have been added by mistake at the end
-    if len(result[-1]) == 1 and whitespace.find(result[-1]) != -1:
+    if result and len(result[-1]) == 1 and whitespace.find(result[-1]) != -1:
         result.pop()
 
     return ''.join(result)
